@@ -5,11 +5,9 @@
     { id: 'lore',       label: 'Лор',       icon: '📖' },
     { id: 'quests',     label: 'Квесты',    icon: '📜' },
     { id: 'timeline',   label: 'Таймлайн',  icon: '⏳' },
-    { id: 'sessions',   label: 'Сессии',    icon: '🕮' },
     { id: 'players',    label: 'Игроки',    icon: '👥' },
     { id: 'rules',      label: 'Правила',   icon: '📕' },
     { id: 'dice',       label: 'Кубики',    icon: '🎲' },
-    { id: 'generators', label: 'Генераторы', icon: '🛠' },
     { id: 'settings',   label: 'Настройки', icon: '⚙' }
   ];
 
@@ -31,12 +29,10 @@
     lore: PK.pages.lore,
     quests: PK.pages.quests,
     timeline: PK.pages.timeline,
-    sessions: makeStub('Сессии'),
     players: PK.pages.players,
     rules: PK.pages.rules,
     dice: PK.pages.dice,
-    generators: makeStub('Генераторы'),
-    settings: makeStub('Настройки')
+    settings: PK.pages.settings
   };
 
   function applyTheme() {
