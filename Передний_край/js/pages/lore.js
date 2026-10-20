@@ -533,6 +533,8 @@ PK.pages.lore = (function () {
 
     /* --- кнопки (делегирование) --- */
     form.addEventListener('click', function (e) {
+		// Инициализация auto-resize для всех textarea
+      U.initAutoResize(form);
       const t = e.target.closest ? e.target.closest('[data-act]') : null;
       if (!t) return;
       const act = t.dataset.act;
@@ -781,9 +783,10 @@ PK.pages.lore = (function () {
   function rerenderLocations(c) {
     const list = document.querySelector('[data-list="locations"]');
     if (!list) return;
+    captureOpenStates(c); // ← ДОБАВИТЬ ЭТУ СТРОКУ
     list.innerHTML = LR.renderLocations(c.locations || []);
-  }
-
+    U.initAutoResize(list); // ← ДОБАВИТЬ ЭТУ СТРОКУ
+}
   /* Перед перерисовкой сохраняем актуальное «открыто/закрыто» из DOM в модель. */
   function captureOpenStates(c) {
     document.querySelectorAll('.loc-item').forEach(function (el) {

@@ -139,7 +139,8 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text); font: inherit; font-size: 12px;
-  resize: vertical; line-height: 1.5;
+  resize: none; /* Убрано resize: vertical */
+  overflow: hidden; /* Скрываем скролл */
   font-family: inherit;
 }
 .loc-desc:focus { outline: none; border-color: var(--accent); }
@@ -195,7 +196,7 @@
   min-width: 0;
   font-family: inherit;
 }
-.npc-row textarea { min-height: 30px; resize: vertical; line-height: 1.4; }
+.npc-row textarea { min-height: 30px; resize: none; overflow: hidden; }
 .npc-row input:focus,
 .npc-row textarea:focus { outline: none; border-color: var(--accent); }
 .npc-quests-btn {
@@ -318,7 +319,8 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text); font: inherit; font-size: 12px;
-  resize: vertical;
+  resize: none; /* Убрано resize: vertical */
+  overflow: hidden; /* Скрываем скролл */
   font-family: inherit;
   line-height: 1.4;
 }
@@ -364,7 +366,8 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text); font: inherit; font-size: 12px;
-  resize: vertical; line-height: 1.5;
+  resize: none; /* Убрано resize: vertical */
+  overflow: hidden; /* Скрываем скролл */
   font-family: inherit;
 }
 .notes-area:focus { outline: none; border-color: var(--accent); }

@@ -92,7 +92,24 @@ PK.utils = (function () {
     modNumber: modNumber,
     download: download,
     debounce: debounce,
+	autoResizeTextarea: autoResizeTextarea,
+    initAutoResize: initAutoResize,
     renderRichText: renderRichText,
     compressImage: compressImage
   };
+
+function autoResizeTextarea(el) {
+  function resize() {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+  el.addEventListener('input', resize);
+  // Инициализация при загрузке
+  setTimeout(resize, 0);
+}
+
+function initAutoResize(root) {
+  const textareas = root.querySelectorAll('textarea');
+  textareas.forEach(autoResizeTextarea);
+}
 })();
