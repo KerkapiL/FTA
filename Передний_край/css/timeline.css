@@ -1,0 +1,307 @@
+/* ============ ВЫБОР ТАЙМЛАЙНА ============ */
+.tl-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  max-width: 900px;
+  margin: 40px auto;
+}
+@media (max-width: 780px) { .tl-picker { grid-template-columns: 1fr; } }
+.tl-picker-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 24px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font: inherit;
+  color: var(--text);
+  transition: border-color 0.12s, transform 0.12s;
+}
+.tl-picker-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.tl-picker-icon { font-size: 48px; line-height: 1; }
+.tl-picker-card h2 { margin: 0; font-size: 18px; }
+
+/* ============ СТРАНИЦА ============ */
+.tl-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+.tl-viewport {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tl-era-label {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  min-height: 40px;
+  transition: color 0.3s;
+}
+
+/* Лента + навигация */
+.tl-strip-wrap {
+  display: grid;
+  grid-template-columns: 40px 40px minmax(0, 1fr) 40px 40px;
+  gap: 6px;
+  align-items: center;
+}
+.tl-nav {
+  width: 40px; height: 40px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s, transform 0.1s;
+}
+.tl-nav:hover { background: var(--accent-soft); border-color: var(--accent); }
+.tl-nav:active { transform: scale(0.94); }
+
+.tl-strip {
+  position: relative;
+  height: 80px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
+  transition: background 0.4s;
+}
+.tl-strip.dragging { cursor: grabbing; }
+
+.tl-fade {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 140px;
+  pointer-events: none;
+  z-index: 3;
+}
+.tl-fade-left {
+  left: 0;
+  background: linear-gradient(to right,
+    var(--panel-2) 0%,
+    var(--panel-2) 25%,
+    color-mix(in srgb, var(--panel-2) 70%, transparent) 60%,
+    transparent 100%);
+}
+.tl-fade-right {
+  right: 0;
+  background: linear-gradient(to left,
+    var(--panel-2) 0%,
+    var(--panel-2) 25%,
+    color-mix(in srgb, var(--panel-2) 70%, transparent) 60%,
+    transparent 100%);
+}
+
+.tl-track { position: absolute; inset: 0; z-index: 2; }
+
+.tl-tick {
+  position: absolute;
+  bottom: 4px;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.tl-tick-line {
+  position: absolute;
+  bottom: 18px;
+  width: 1px;
+  height: 8px;
+  background: var(--border-strong);
+  transform: translateX(-50%);
+}
+
+.tl-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 24px;
+  border-radius: 3px;
+  background: var(--tl-cat, var(--accent));
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  z-index: 4;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.15);
+}
+.tl-marker:hover { transform: translate(-50%, -50%) scale(1.3); }
+.tl-marker.selected {
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 0 0 1px var(--accent);
+  transform: translate(-50%, -50%) scale(1.3);
+}
+.tl-marker.future { opacity: 0.4; }
+
+.tl-marker-cluster {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 2px;
+  z-index: 4;
+}
+.tl-marker-cluster .tl-marker { position: relative; top: auto; transform: none; }
+.tl-marker-cluster .tl-marker:hover { transform: scale(1.2); }
+
+.tl-today-line {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+  transform: translateX(-50%);
+  z-index: 3;
+  pointer-events: none;
+}
+.tl-today-label {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.tl-date {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  min-height: 20px;
+  transition: opacity 0.2s;
+}
+.tl-date .tl-date-small { color: var(--muted); font-weight: 400; margin-left: 8px; font-size: 12px; }
+
+.tl-zoom-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  align-items: center;
+}
+.tl-zoom {
+  width: 150px;
+  accent-color: var(--accent);
+}
+.tl-zoom-label {
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 52px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Три колонки */
+.tl-events {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 220px;
+  padding: 12px 0;
+}
+.tl-event-col {
+  flex: 0 1 33.333%;
+  max-width: 33.333%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--tl-cat, var(--border-strong));
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.12s, transform 0.12s;
+}
+.tl-event-col:hover { border-color: var(--accent); transform: translateY(-1px); }
+
+.tl-event-cat {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tl-cat, var(--muted));
+}
+.tl-event-title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.tl-event-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.tl-events-empty {
+  text-align: center;
+  color: var(--muted);
+  font-style: italic;
+  padding: 40px 0;
+  width: 100%;
+}
+
+/* Строка текущего дня кампании */
+.tl-today-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.tl-today-row .tl-today-date {
+  font-weight: 700;
+  color: var(--accent);
+}
+.tl-today-row .tl-today-slider { flex: 1 1 200px; min-width: 120px; }
+
+/* Сезонные оттенки (для кампании) */
+.tl-page[data-season="winter"] .tl-era-label { color: #6dc6f0; }
+.tl-page[data-season="spring"] .tl-era-label { color: #6ec27e; }
+.tl-page[data-season="summer"] .tl-era-label { color: #e8b830; }
+.tl-page[data-season="autumn"] .tl-era-label { color: #e8874a; }
+
+.tl-page[data-season="winter"] .tl-strip {
+  background: linear-gradient(180deg, rgba(109,198,240,0.22), rgba(109,198,240,0.06)), var(--panel-2);
+  transition: background 0.4s;
+}
+.tl-page[data-season="spring"] .tl-strip {
+  background: linear-gradient(180deg, rgba(110,194,126,0.22), rgba(110,194,126,0.06)), var(--panel-2);
+  transition: background 0.4s;
+}
+.tl-page[data-season="summer"] .tl-strip {
+  background: linear-gradient(180deg, rgba(232,184,48,0.24), rgba(232,184,48,0.06)), var(--panel-2);
+  transition: background 0.4s;
+}
+.tl-page[data-season="autumn"] .tl-strip {
+  background: linear-gradient(180deg, rgba(232,135,74,0.24), rgba(232,135,74,0.06)), var(--panel-2);
+  transition: background 0.4s;
+}
+
+/* Маркер с несколькими событиями на одну дату */
+.tl-marker-count-2 { width: 16px; }
+.tl-marker-count-3 { width: 20px; }
