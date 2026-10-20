@@ -414,10 +414,11 @@ PK.combatEngine = (function () {
     const before = p.hpCurrent;
     p.hpCurrent = Math.min(p.hpMax, p.hpCurrent + Math.floor(amount));
     addLog(p.name + ' вылечен на ' + amount + ' (' + before + ' → ' + p.hpCurrent + ' HP)');
-    if (p.hpCurrent > 0 && p.isPlayer) {
+    if (p.hpCurrent > 0 && !p.alive) {
       p.alive = true;
       p.deathSaves = { successes: 0, failures: 0, stable: false };
-    }
+      addLog(p.name + ' воскрешён!');
+}
     save(); notify();
   }
 
@@ -429,10 +430,11 @@ PK.combatEngine = (function () {
     const before = p.hpCurrent;
     p.hpCurrent = Math.max(0, Number(newHp));
     addLog(p.name + ': HP ' + before + ' → ' + p.hpCurrent);
-    if (p.hpCurrent > 0 && p.isPlayer) {
-      p.alive = true;
-      p.deathSaves = { successes: 0, failures: 0, stable: false };
-    }
+	if (p.hpCurrent > 0 && !p.alive) {
+	  p.alive = true;
+	  p.deathSaves = { successes: 0, failures: 0, stable: false };
+	  addLog(p.name + ' воскрешён!');
+	}
     save(); notify();
   }
 
@@ -469,6 +471,7 @@ PK.combatEngine = (function () {
 
   // ==== Смертельные спасброски ====
   function rollDeathSave(p) {
+	takeSnapshot();
     const r = D.rollOne(20);
     p.deathSaves = p.deathSaves || { successes: 0, failures: 0, stable: false };
     if (r === 20) {

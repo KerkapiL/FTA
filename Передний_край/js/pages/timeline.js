@@ -306,8 +306,9 @@ PK.pages.timeline = (function () {
   function renderWorldStrip() {
     var track = els.root.querySelector('#tl-track');
     var span = state.visibleSpan;
-    var left = state.centerValue - span / 2;
-    var right = state.centerValue + span / 2;
+    var b = rangeBounds();
+    var left = Math.max(b.min, state.centerValue - span / 2);
+    var right = Math.min(b.max, state.centerValue + span / 2);
 
     var html = '';
 
@@ -358,8 +359,9 @@ PK.pages.timeline = (function () {
   function renderCampaignStrip(currentIdx, totalDays) {
     var track = els.root.querySelector('#tl-track');
     var span = state.visibleSpan;
-    var left = state.centerValue - span / 2;
-    var right = state.centerValue + span / 2;
+    var b = rangeBounds();
+	var left = Math.max(b.min, state.centerValue - span / 2);
+	var right = Math.min(b.max, state.centerValue + span / 2);
 
     var html = '';
     var step = pickTick(span, [1, 2, 3, 7, 14, 30, 60, 90]);
@@ -583,13 +585,8 @@ PK.pages.timeline = (function () {
 
   function clampCenter(v) {
     var b = rangeBounds();
-    var half = state.visibleSpan / 2;
-    // Центр не заходит за границы диапазона. Крайнее событие стоит у края ленты,
-    // но за границу уехать нельзя.
-    var lo = b.min + half;
-    var hi = b.max - half;
-    if (lo > hi) return (b.min + b.max) / 2;
-    return Math.max(lo, Math.min(hi, v));
+    // Разрешаем центру доходить до самых краёв
+    return Math.max(b.min, Math.min(b.max, v));
 }
 
   function markerBg(colors) {

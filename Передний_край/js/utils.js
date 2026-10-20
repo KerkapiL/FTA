@@ -95,6 +95,7 @@ PK.utils = (function () {
 	autoResizeTextarea: autoResizeTextarea,
     initAutoResize: initAutoResize,
     renderRichText: renderRichText,
+	globalSearch: globalSearch,
     compressImage: compressImage
   };
 
@@ -112,4 +113,35 @@ function initAutoResize(root) {
   const textareas = root.querySelectorAll('textarea');
   textareas.forEach(autoResizeTextarea);
 }
+
+function globalSearch(query) {
+  if (!query || !query.trim()) return Promise.resolve([]);
+  const q = query.trim().toLowerCase();
+  const stores = ['creatures', 'lore', 'quests', 'players'];
+  
+  return Promise.all(stores.map(function(store) {
+    return PK.storage.getAll(store).then(function(items) {
+      return (items || []).map(function(item) {
+        return { store: store, item: item };
+      });
+    });
+  })).then(function(results) {
+    const all = results.reduce(function(acc, arr) { return acc.concat(arr); }, []);
+    
+    return all.filter(function(r) {
+      const item = r.item;
+      const searchable = [
+        item.name,
+        item.title,
+        item.subtitle,
+        item.description,
+        item.body,
+        (item.tags || []).join(' ')
+      ].filter(Boolean).join(' ').toLowerCase();
+      
+      return searchable.indexOf(q) !== -1;
+    }).slice(0, 20); // Максимум 20 результатов
+  });
+}
+
 })();

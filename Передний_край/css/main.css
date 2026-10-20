@@ -161,10 +161,13 @@ select.input { cursor: pointer; }
 
 /* ============ МОДАЛКА С БОКОВОЙ ПАНЕЛЬЮ ============ */
 .modal-backdrop.has-side {
-  gap: 16px;
-  align-items: center;
+  /* Убираем gap, чтобы заметка не влияла на центрирование */
 }
 .modal-side {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 320px;
   max-height: 90vh;
   overflow-y: auto;
@@ -173,7 +176,7 @@ select.input { cursor: pointer; }
   border-radius: 8px;
   padding: 16px 18px;
   box-shadow: 0 12px 40px rgba(0,0,0,0.25);
-  flex-shrink: 0;
+  z-index: 101;
 }
 @media (max-width: 1100px) {
   .modal-side { display: none; }
@@ -225,4 +228,56 @@ select.input { cursor: pointer; }
   height: 20px;
   background: var(--border);
   margin: 0 4px;
+}
+
+/* ============ ГЛОБАЛЬНЫЙ ПОИСК ============ */
+.global-search-wrap {
+  position: relative;
+}
+.global-search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 200;
+  display: none;
+}
+.global-search-results.show {
+  display: block;
+}
+.search-result-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.search-result-item:last-child {
+  border-bottom: none;
+}
+.search-result-item:hover {
+  background: var(--accent-soft);
+}
+.search-result-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+}
+.search-result-meta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.search-result-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+  font-style: italic;
+  font-size: 12px;
 }
