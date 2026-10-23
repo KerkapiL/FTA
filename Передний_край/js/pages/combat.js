@@ -294,8 +294,9 @@ PK.pages.combat = (function () {
     const isActive = i === c.activeIdx;
     const isViewing = i === c.viewingIdx;
     const isTarget = targeting && targeting.selected.indexOf(p.id) !== -1;
-    const hpPct = p.hpMax > 0 ? Math.max(0, Math.min(100, Math.round(p.hpCurrent / p.hpMax * 100))) : 0;
-    const hpCls = hpPct > 50 ? 'high' : hpPct > 25 ? 'mid' : 'low';
+	const hpPct = p.hpMax > 0 ? Math.max(0, Math.min(100, Math.round(p.hpCurrent / p.hpMax * 100))) : 0;
+	const hpCls = hpPct > 50 ? 'high' : hpPct > 25 ? 'mid' : 'low';
+	const hasTempHp = p.tempHp > 0;
     const initials = p.avatar ? '' : U.escapeHtml((p.name || '?').slice(0, 1));
     const isDying = p.isPlayer && p.hpCurrent <= 0 && p.alive && !(p.deathSaves && p.deathSaves.stable);
     const isDeadPlayer = p.isPlayer && !p.alive;
@@ -316,7 +317,9 @@ PK.pages.combat = (function () {
       '<div class="init-avatar" style="' + (p.avatar ? 'background-image:url(' + p.avatar + ')' : '') + '">' + initials + '</div>' +
       '<div class="init-name">' + U.escapeHtml(p.name) + '</div>' +
       '<div class="init-hp"><div class="init-hp-fill ' + hpCls + '" style="width:' + hpPct + '%"></div></div>' +
-      '<div class="init-hp-text">' + p.hpCurrent + '/' + p.hpMax + '</div>' +
+      '<div class="init-hp-text">' + p.hpCurrent + '/' + p.hpMax +
+	    (hasTempHp ? ' <span class="temp-hp-badge" title="Временные HP">+' + p.tempHp + '</span>' : '') +
+	  '</div>' +
       (p.initiative != null ? '<div class="init-init">Иниц. ' + p.initiative + '</div>' : '') +
       initConditionsHtml(p) +
       (isDying ? '<div class="init-dying" title="На грани смерти">⚠</div>' : '') +
@@ -402,6 +405,7 @@ PK.pages.combat = (function () {
           '<button class="btn btn-small btn-danger" data-quick-hp="-1">−1</button>' +
           '<button class="btn btn-small btn-danger" data-quick-hp="-5">−5</button>' +
           '<button class="btn btn-small" id="custom-hp">своё…</button>' +
+		  '<button class="btn btn-small" id="temp-hp-btn" title="Временные HP">🛡</button>' +
         '</div>' +
       '</div>' +
 
@@ -611,6 +615,7 @@ PK.pages.combat = (function () {
       }
 
       if (e.target.id === 'custom-hp') { openCustomHpDialog(viewing.id); return; }
+	  if (e.target.id === 'temp-hp-btn') { openTempHpDialog(viewing.id); return; }
       if (e.target.id === 'add-condition') { openAddConditionDialog(viewing.id); return; }
       if (e.target.id === 'revive-player') {
         if (!viewing.isPlayer) return;
@@ -785,11 +790,15 @@ PK.pages.combat = (function () {
       };
     });
 
-    function totalHits(s) {
-      let h = 0;
-      s.attacks.forEach(function (a) { if (a.d20 + a.bonus >= s.ac) h++; });
-      return h;
-    }
+	function totalHits(s) {
+	  let h = 0;
+	  s.attacks.forEach(function (a) {
+		const isCrit = a.d20 === 20;
+		const isCritFail = a.d20 === 1;
+		if (isCrit || (!isCritFail && a.d20 + a.bonus >= s.ac)) h++;
+	  });
+	  return h;
+	}
     function saveVal(s, gi) {
       const sv = s.saves[gi];
       if (sv.manual) return sv.value === '' ? null : Number(sv.value);
@@ -805,27 +814,34 @@ PK.pages.combat = (function () {
         html += '<div class="roll-title">🎯 ' + U.escapeHtml(s.target.name) + ' — КД ' + s.ac +
           (s.target.isPlayer ? ' <span class="badge">Игрок</span>' : '') + '</div>';
 
-        if (hasAttack) {
-          html += '<div class="attack-list">';
-          s.attacks.forEach(function (a, ai) {
-            const total = a.d20 + a.bonus;
-            const hit = total >= s.ac;
-            html += '<div class="attack-row">' +
-              '<span class="attack-num">#' + (ai + 1) + '</span>' +
-              '<div class="attack-main">' +
-                '<input class="input roll-input-sm" type="number" data-atk-d20="' + si + '-' + ai + '" value="' + a.d20 + '" style="width:60px">' +
-                '<span class="roll-op">+</span>' +
-                '<input class="input roll-input-sm" type="number" data-atk-bonus="' + si + '-' + ai + '" value="' + a.bonus + '" style="width:60px">' +
-                '<span class="roll-op">=</span>' +
-                '<span class="attack-total" data-atk-total="' + si + '-' + ai + '">' + total + '</span>' +
-              '</div>' +
-              '<span class="attack-status ' + (hit ? 'hit' : 'miss') + '" data-atk-status="' + si + '-' + ai + '">' + (hit ? '✓' : '✗') + '</span>' +
-              '<button type="button" class="btn btn-icon btn-small" data-atk-reroll="' + si + '-' + ai + '" title="Перебросить">🎲</button>' +
-            '</div>';
-          });
-          html += '</div>';
-          html += '<div class="dmg-total-row">Попало: <span class="dmg-total" data-hits="' + si + '">' + totalHits(s) + '</span> / ' + attackCount + '</div>';
-        }
+		if (hasAttack) {
+		  html += '<div class="attack-list">';
+		  s.attacks.forEach(function (a, ai) {
+			const total = a.d20 + a.bonus;
+			const isCrit = a.d20 === 20;
+			const isCritFail = a.d20 === 1;
+			const hit = isCrit || (!isCritFail && total >= s.ac);
+			let statusText = '', statusCls = '';
+			if (isCrit) { statusText = '💥 КРИТ!'; statusCls = 'crit'; }
+			else if (isCritFail) { statusText = '💀 КР.ПРОМАХ'; statusCls = 'crit-fail'; }
+			else if (hit) { statusText = '✓'; statusCls = 'hit'; }
+			else { statusText = '✗'; statusCls = 'miss'; }
+			html += '<div class="attack-row">' +
+			  '<span class="attack-num">#' + (ai + 1) + '</span>' +
+			  '<div class="attack-main">' +
+				'<input class="input roll-input-sm" type="number" data-atk-d20="' + si + '-' + ai + '" value="' + a.d20 + '" style="width:60px">' +
+				'<span class="roll-op">+</span>' +
+				'<input class="input roll-input-sm" type="number" data-atk-bonus="' + si + '-' + ai + '" value="' + a.bonus + '" style="width:60px">' +
+				'<span class="roll-op">=</span>' +
+				'<span class="attack-total" data-atk-total="' + si + '-' + ai + '">' + total + '</span>' +
+			  '</div>' +
+			  '<span class="attack-status ' + statusCls + '" data-atk-status="' + si + '-' + ai + '">' + statusText + '</span>' +
+			  '<button type="button" class="btn btn-icon btn-small" data-atk-reroll="' + si + '-' + ai + '" title="Перебросить">🎲</button>' +
+			'</div>';
+		  });
+		  html += '</div>';
+		  html += '<div class="dmg-total-row">Попало: <span class="dmg-total" data-hits="' + si + '">' + totalHits(s) + '</span> / ' + attackCount + '</div>';
+		}
 
         if (hasSave) {
           saveGroups.forEach(function (sg, gi) {
@@ -951,11 +967,15 @@ PK.pages.combat = (function () {
 
     function summaryLine(s) {
       const parts = [];
-      if (hasAttack) {
-        const hits = totalHits(s);
-        const perHit = damagePiecesTotal(hitPieces);
-        parts.push(hits + ' попад. × ' + perHit + ' = ' + (hits * perHit));
-      }
+	  if (hasAttack) {
+	    const hits = totalHits(s);
+	    const hasCrit = s.attacks.some(function (a) { return a.d20 === 20; });
+	    const perHit = damagePiecesTotal(hitPieces);
+	    let hitStr = hits + ' попад.';
+	    if (hasCrit) hitStr += ' 💥КРИТ!';
+	    hitStr += ' × ' + perHit + ' = ' + (hits * perHit);
+	    parts.push(hitStr);
+	  }
       if (hasSave) {
         saveGroups.forEach(function (sg, gi) {
           if (!sg.damages || !sg.damages.length) return;
@@ -988,20 +1008,27 @@ PK.pages.combat = (function () {
     function refresh() {
       // Обновить атаки
       st.forEach(function (s, si) {
-        if (hasAttack) {
-          s.attacks.forEach(function (a, ai) {
-            const dEl = document.querySelector('[data-atk-total="' + si + '-' + ai + '"]');
-            if (dEl) dEl.textContent = a.d20 + a.bonus;
-            const stEl = document.querySelector('[data-atk-status="' + si + '-' + ai + '"]');
-            if (stEl) {
-              const hit = (a.d20 + a.bonus) >= s.ac;
-              stEl.textContent = hit ? '✓' : '✗';
-              stEl.className = 'attack-status ' + (hit ? 'hit' : 'miss');
-            }
-          });
-          const hEl = document.querySelector('[data-hits="' + si + '"]');
-          if (hEl) hEl.textContent = totalHits(s);
-        }
+		if (hasAttack) {
+		  s.attacks.forEach(function (a, ai) {
+			const dEl = document.querySelector('[data-atk-total="' + si + '-' + ai + '"]');
+			if (dEl) dEl.textContent = a.d20 + a.bonus;
+			const stEl = document.querySelector('[data-atk-status="' + si + '-' + ai + '"]');
+			if (stEl) {
+			  const isCrit = a.d20 === 20;
+			  const isCritFail = a.d20 === 1;
+			  const hit = isCrit || (!isCritFail && (a.d20 + a.bonus) >= s.ac);
+			  let statusText = '', statusCls = '';
+			  if (isCrit) { statusText = '💥 КРИТ!'; statusCls = 'crit'; }
+			  else if (isCritFail) { statusText = '💀 КР.ПРОМАХ'; statusCls = 'crit-fail'; }
+			  else if (hit) { statusText = '✓'; statusCls = 'hit'; }
+			  else { statusText = '✗'; statusCls = 'miss'; }
+			  stEl.textContent = statusText;
+			  stEl.className = 'attack-status ' + statusCls;
+			}
+		  });
+		  const hEl = document.querySelector('[data-hits="' + si + '"]');
+		  if (hEl) hEl.textContent = totalHits(s);
+		}
         if (hasSave) {
           saveGroups.forEach(function (sg, gi) {
             const el = document.querySelector('[data-save-status="' + si + '-' + gi + '"]');
@@ -1166,14 +1193,23 @@ PK.pages.combat = (function () {
             const hpBefore = target.hpCurrent;
             const pieces = [];
 
-            if (hasAttack) {
-              const hits = totalHits(s);
-              if (hits > 0 && hitPieces.length) {
-                hitPieces.forEach(function (p) {
-                  pieces.push({ type: p.data.type, sum: damagePieceSum(p) * hits });
-                });
-              }
-            }
+			if (hasAttack) {
+			  // Проверяем есть ли крит среди атак
+			  const hasCrit = s.attacks.some(function (a) { return a.d20 === 20; });
+			  const hits = totalHits(s);
+			  if (hits > 0 && hitPieces.length) {
+				hitPieces.forEach(function (p) {
+				  let dmg = damagePieceSum(p);
+				  // При крите: удваиваем кости (пересчитываем с двойным количеством)
+				  if (hasCrit) {
+					const critRolls = [];
+					for (let i = 0; i < p.count * 2; i++) critRolls.push(1 + Math.floor(Math.random() * p.die));
+					dmg = critRolls.reduce(function (a, b) { return a + b; }, 0) + p.modifier;
+				  }
+				  pieces.push({ type: p.data.type, sum: dmg * hits });
+				});
+			  }
+			}
 
             if (hasSave) {
               saveGroups.forEach(function (sg, gi) {
@@ -1495,6 +1531,32 @@ PK.pages.combat = (function () {
           const v = Number(body.querySelector('#hpd').value) || 0;
           if (v > 0) E.applyDamage(pid, v, { source: 'ручная правка' });
           else if (v < 0) E.applyHeal(pid, -v);
+          close();
+        });
+      }
+    });
+  }
+  
+  function openTempHpDialog(pid) {
+    const c = E.get();
+    const p = c.participants.find(function (x) { return x.id === pid; });
+    if (!p) return;
+    M.openModal({
+      title: 'Временные HP — ' + p.name,
+      content:
+        '<div>' +
+          '<label class="field"><span class="field-label">Сколько временных HP (0 — убрать)</span>' +
+            '<input class="input" type="number" id="thpd" value="' + (p.tempHp || 0) + '" min="0" autofocus></label>' +
+          '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">' +
+            '<button class="btn" data-cancel>Отмена</button>' +
+            '<button class="btn btn-primary" data-apply>Применить</button>' +
+          '</div>' +
+        '</div>',
+      onMount: function (body, close) {
+        body.querySelector('[data-cancel]').addEventListener('click', close);
+        body.querySelector('[data-apply]').addEventListener('click', function () {
+          const v = Math.max(0, Number(body.querySelector('#thpd').value) || 0);
+          E.setTempHp(pid, v);
           close();
         });
       }
